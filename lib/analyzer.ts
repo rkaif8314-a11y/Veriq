@@ -1,4 +1,4 @@
-import dns from "node:dns/promises";
+import dns from "node:dns/promises";import {isIP} from "node:net";
 
 export type CheckType="url"|"message"|"claim";
 export type Signal={label:string;detail:string;kind:"positive"|"warning"|"neutral";confidence:number};
@@ -72,7 +72,10 @@ async function urlCheck(value:string):Promise<Analysis>{
  return{type:"url",subject:host,score:clamp(score),confidence:reachable?82:70,risk,headline,summary:reachable?`Veriq checked live URL-level signals and the site's response. This is a risk screen, not a guarantee of safety.`:"Veriq could not establish enough live evidence to make a strong trust conclusion.",signals,recommendation:risk==="high"?"Do not enter credentials or send money. Verify the organization through an independently obtained official channel.":risk==="low"?"No major URL-level warning was found, but verify important requests independently.":"Review the evidence before sharing credentials, money, or sensitive information.",limitations};
 }
 
-function isPrivateIPv4(ip:string){const p=ip.split(".").map(Number);return p.length===4&&(p[0]===10||p[0]===127||(p[0]===172&&p[1]>=16&&p[1]<=31)||(p[0]===192&&p[1]===168)||p[0]===0)}
+function isPrivateAddress(ip:string){
+ if(isIP(ip)===4){const p=ip.split(".").map(Number);return p[0]===10||p[0]===127||p[0]===0||(p[0]===169&&p[1]===254)||(p[0]===192&&p[1]===168)||(p[0]===172&&p[1]>=16&&p[1]<=31)}
+ const v=ip.toLowerCase();return v==="::1"||v==="::"||v.startsWith("fe80:")||v.startsWith("fc")||v.startsWith("fd")||v.startsWith("::ffff:127.")||v.startsWith("::ffff:10.")||v.startsWith("::ffff:192.168.")
+}
 
 function messageCheck(value:string):Analysis{
  const rules:[RegExp,string,string,number][]=[
